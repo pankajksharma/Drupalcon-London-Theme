@@ -1,0 +1,21 @@
+core = "6.x"
+dependencies[] = "cod_news"
+dependencies[] = "cod_session"
+dependencies[] = "cod_sponsors"
+dependencies[] = "signup"
+description = "Displays promoted content, sessions, and news on front page."
+features[context][] = "context_ui-section-front"
+features[ctools][] = "context:context:3"
+features[views][] = "front"
+features[views_api][] = "api:2"
+name = "COD Front Page"
+package = "Features"
+project = "cod_front_page"
+version = "6.x-1.0-alpha3"
+
+; Information added by drupal.org packaging script on January 1, 1970 - 00:00
+version = "6.x-1.0-alpha3"
+core = "6.x"
+project = "cod_support"
+datestamp = "1296190003"
+

@@ -1,0 +1,55 @@
+<html>
+<head>
+  <title>jSpotlite Demo</title>
+  <script type="text/javascript" charset="utf-8" src='../lib/jquery.min.js'></script>
+  <script type="text/javascript" charset="utf-8" src='../lib/jquery.jspotlite.js'></script>
+  <link type="text/css" rel="stylesheet" media="all" href="../lib/jquery.jspotlite.css" />
+  <link type="text/css" rel="stylesheet" media="all" href="../style/tango/skin.css" />
+  <script type="text/javascript" charset="utf-8">
+    $(function() {
+      $('#spotlite-test').jspotlite({
+        delay: 2,
+        itemEvent: 'mouseover'
+      });
+    });
+  </script>
+  <style type="text/css" media="all">
+    .jspotlite-skin-tango .jspotlite-container {
+      width: 400px;
+    }
+  </style>
+</head>
+<body>
+<h1>jSpotlite Demo</h1>
+
+<p>A simple demonstration of the jSpotlite jQuery plugin.</p>
+
+<div class="jspotlite-skin-tango">
+<ul id ="spotlite-test" class="jspotlite-list">
+  <li>Dennis Wilson<div class="feature">this</div></li>
+  <li>Billy Joel<div class="feature">is</div></li>
+  <li>Joe Strummer<div class="feature">updating</div></li>
+  <li>Michael Jackson<div class="feature">like</div></li>
+  <li>Carole King<div class="feature">magic</div></li>
+</ul>
+</div>
+
+<div>
+<h4>Features:</h4>
+<ul>
+  <li>Hovering over the spotlite widget will stop rotation.</li>
+  <li>The pause button will start and stop rotation.</li>
+  <li>The arrows can control the movement through the list</li>
+  <li>Content populating the spotlite div is arbitrary content embeded in the list.</li>
+</ul>
+<h4>Todo:</h4>
+<ul>
+  <li>Transition effects</li>
+  <li>swfObject support/arbitrary js callback support would likely be useful.</li>
+  <li>A horizonal demo. The code should support it just not tested or skined.</li>
+</ul>
+</div>
+
+
+</body>
+</html>

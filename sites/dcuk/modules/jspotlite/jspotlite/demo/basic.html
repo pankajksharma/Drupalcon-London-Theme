@@ -1,0 +1,61 @@
+<html>
+<head>
+  <title>jSpotlite Demo</title>
+  <script type="text/javascript" charset="utf-8" src='../lib/jquery.min.js'></script>
+  <script type="text/javascript" charset="utf-8" src='../lib/jquery.jspotlite.js'></script>
+  <link type="text/css" rel="stylesheet" media="all" href="../lib/jquery.jspotlite.css" />
+  <link type="text/css" rel="stylesheet" media="all" href="../style/tango/skin.css" />
+  <script type="text/javascript" charset="utf-8">
+    $(function() {
+      // Very basic setup.
+      $('#spotlite-test').jspotlite();
+
+      // Provide a couple options.
+      $('#spotlite-test2').jspotlite({
+        delay: 5,
+        itemEvent: 'mouseover'
+      });
+    });
+  </script>
+  <style type="text/css" media="all">
+    .jspotlite-skin-tango {
+      margin: 15px;
+    }
+    .jspotlite-skin-tango .jspotlite-container {
+      width: 400px;
+    }
+  </style>
+</head>
+<body>
+<h1>jSpotlite Demo</h1>
+
+<p>A simple demonstration of the jSpotlite jQuery plugin.</p>
+
+<h2>Basic spotlite demo</h2>
+<p>The most structure for using the spotlite plugin.</p>
+<div class="jspotlite-skin-tango">
+  <ul id="spotlite-test" class="jspotlite-list">
+    <li>Dennis Wilson<div class="feature">this</div></li>
+    <li>Billy Joel<div class="feature">is</div></li>
+    <li>Joe Strummer<div class="feature">updating</div></li>
+    <li>Michael Jackson<div class="feature">like</div></li>
+    <li>Carole King<div class="feature">magic</div></li>
+  </ul>
+</div>
+
+<h2>Bit more interesting setup</h2>
+<p>A slightly more interesting setup using navigation. We also set some options to change the rotation delay and change content on mouseover.</p>
+<div class="jspotlite-skin-tango">
+  <div class="jspotlite-container">
+    <div class="jspotlite-control"></div>
+    <ul id="spotlite-test2" class="jspotlite-list">
+      <li>John Doe<div class="feature">Coolest John</div></li>
+      <li>Jane Doe<div class="feature">A really cool girl.</div></li>
+      <li>Fred<div class="feature">Fred is a really cool guy.</div></li>
+      <li>Robert Gordon<div class="feature">Robert is a happy guy.</div></li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>

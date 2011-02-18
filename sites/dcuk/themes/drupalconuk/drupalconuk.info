@@ -1,0 +1,58 @@
+;$Id$
+
+; Descriptive information
+name = drupalconuk
+description = Drupalcon uk theme
+core = 6.x
+engine = phptemplate
+
+; Regions
+regions[top_bar] = Top bar
+regions[nav] = Navigation
+regions[header] = Header content
+regions[sidebar] = Sidebar
+regions[node_inner] = Region within node content
+regions[carousel] = Carousel region
+regions[content_top] = Content top
+regions[content_inner] = Content inner
+regions[content_bottom] = Content bottom
+regions[footer] = Footer content
+
+; Stylesheets
+stylesheets[all][] = gillsans/stylesheet.css
+stylesheets[all][] = css/style.css
+
+; Scripts
+scripts[] = js/drupalconuk.js
+
+; Skinr
+skinr[dcuk_blocks][title] = Block styles
+skinr[dcuk_blocks][type] = select
+skinr[dcuk_blocks][description] = Available block styles
+skinr[dcuk_blocks][features][] = block
+skinr[dcuk_blocks][options][1][label] = Flag/Arrow heading
+skinr[dcuk_blocks][options][1][class] = arrow
+skinr[dcuk_blocks][options][2][label] = Solid bg block
+skinr[dcuk_blocks][options][2][class] = solid
+skinr[dcuk_blocks][options][3][label] = Buy tickets block styling
+skinr[dcuk_blocks][options][3][class] = tickets
+skinr[dcuk_blocks][options][4][label] = Login/Register block
+skinr[dcuk_blocks][options][4][class] = logreg
+skinr[dcuk_blocks][options][5][label] = Twitter block
+skinr[dcuk_blocks][options][5][class] = twitter
+
+skinr[node_styles][title] = Node styles
+skinr[node_styles][type] = select
+skinr[node_styles][description] = Various node styles
+skinr[node_styles][features][] = node
+skinr[node_styles][options][1][label] = News node with date
+skinr[node_styles][options][1][class] = news
+skinr[node_styles][options][2][label] = Regular node no date
+skinr[node_styles][options][2][class] = nodate
+
+skinr[dcuk_carousel][features][] = views
+skinr[dcuk_carousel][options][1][label] = Cycle nodes in this div
+skinr[dcuk_carousel][options][1][class] = cycle-nodes
+
+
+

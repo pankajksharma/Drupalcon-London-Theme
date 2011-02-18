@@ -1,0 +1,392 @@
+<?php
+// $Id: fasttoggle.module,v 1.8.2.4 2008/04/19 19:35:36 timcn Exp $
+
+/**
+ * @file
+ * Enables fast toggling of binary or not so binary settings
+ */
+
+/**
+ * Displays the current state of a setting (e.g. "published", "active").
+ */
+define('FASTTOGGLE_LABEL_STATUS', 0x0000);
+
+/**
+ * Displays the action that will be performed (e.g. "unpublish", "block").
+ */
+define('FASTTOGGLE_LABEL_ACTION', 0x0001);
+
+/**
+ * Read custom strings from settings.php
+ */
+define('FASTTOGGLE_LABEL_CUSTOM', 0x0002);
+
+/**
+ * Implementation of hook_menu().
+ */
+function fasttoggle_menu() {
+  $items = array();
+
+  $items['admin/settings/fasttoggle'] = array(
+    'title' => 'Fasttoggle',
+    'description' => 'Configure what fast toggling options are available.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('fasttoggle_settings_form'),
+    'file' => 'fasttoggle.admin.inc',
+    'access arguments' => array('administer fasttoggle'),
+  );
+
+  $items['node/%node/toggle/%'] = array(
+    'title' => 'Toggle',
+    'page callback' => 'fasttoggle_node_option',
+    'page arguments' => array(1, 3),
+    'access callback' => TRUE, // Access checking is handled in hook_fasttoggle_options().
+    'type' => MENU_CALLBACK,
+    'file' => 'fasttoggle.toggle.inc',
+  );
+
+  $items['user/%user/toggle/%'] = array(
+    'title' => 'Toggle',
+    'page callback' => 'fasttoggle_user_option',
+    'page arguments' => array(1, 3),
+    'access callback' => TRUE, // Access checking is handled in hook_fasttoggle_options().
+    'type' => MENU_CALLBACK,
+    'file' => 'fasttoggle.toggle.inc',
+  );
+
+  // Note: _comment is required so that it maps to _comment_load
+  $items['comment/toggle/%_comment/%'] = array(
+    'title' => 'Toggle',
+    'page callback' => 'fasttoggle_comment_option',
+    'page arguments' => array(2, 3),
+    'access callback' => TRUE, // Access checking is handled in hook_fasttoggle_options().
+    'type' => MENU_CALLBACK,
+    'file' => 'fasttoggle.toggle.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function fasttoggle_perm() {
+  return array('promote posts', 'make posts sticky', 'moderate posts', 'moderate users', 'moderate comments', 'administer fasttoggle');
+}
+
+/**
+ * Implementation of hook_user().
+ *
+ * Add togglable links to user pages.
+ */
+function fasttoggle_user($type, &$edit, &$user) {
+  $settings = variable_get('fasttoggle_user_settings', array('status' => TRUE));
+
+  if ($type == 'view' && $settings['status'] && (user_access('administer users') || user_access('moderate users'))) {
+    $link = array_shift(fasttoggle_link('user', $user, TRUE));
+    $user->content['fasttoggle'] = array(
+      '#value' => t('Status') .': '. l($link['title'], $link['href'], $link),
+    );
+  }
+}
+
+/**
+ * Implementation of hook_help().
+ */
+function fasttoggle_help($path, $arg) {
+  switch ($path) {
+    case 'admin/settings/fasttoggle':
+      return t('Configure what fast toggling options are available.');
+      break;
+  }
+}
+
+/**
+ * Add fasttoggle abilities to a link
+ *
+ * @param $title
+ *   The caption of the link
+ * @param $callback
+ *   The callback URL that will be the queried when the user clicks on that link.
+ *   If queried via JS, it should perform the action because $_POST['confirm']
+ *   is set to true. Return a JSON structure that has the key 'text' that contains
+ *   the updatd link text.
+ *   If the action is not confirmed, return a rendered confirmation form.
+ *   If you return JSON in your callback function, set the content type of the
+ *   header to text/javascript and the encoding to utf-8. Currently, only one
+ *   JSON parameter is used: text.
+ * @param $html
+ *   (optional; defaults to true) Set whether this function should return a the
+ *   HTML code for the fast toggle link or a link structure for use in hook_link
+ *   hooks.
+ * @param $token
+ *   (optional; defaults to an empty string) Provide a salt for the token
+ *   authentification added to each toggle link. If the string is empty, the
+ *   generic token for the user on this site is used.
+ *
+ * @return
+ *   Either a complete HTML link or a link array structure for use in hook_link.
+ */
+function fasttoggle($title, $callback, $html = TRUE, $token = '') {
+  static $sent = false;
+
+  // Only include the support files once.
+  if (!$sent) {
+    $sent = true;
+    drupal_add_js(drupal_get_path('module', 'fasttoggle') .'/fasttoggle.js');
+    drupal_add_css(drupal_get_path('module', 'fasttoggle') .'/fasttoggle.css', 'module', 'all', FALSE);
+  }
+  $attributes = array('class' => 'fasttoggle', 'title' => t('Toggle this setting'));
+  $query = drupal_get_destination() .'&token='. drupal_get_token($token);
+
+  if ($html) {
+    return l($title, $callback, array('attributes' => $attributes, 'query' => $query));
+  }
+  else {
+    return array('title' => $title, 'href' => $callback, 'query' => $query, 'attributes' => $attributes);
+  }
+}
+
+/**
+ * Enable modules to add properties to comments through hook_comment().
+ *
+ * To support toggling, a property needs to be loaded onto the base object.
+ * hook_nodeapi() and hook_user() support a 'load' op but _comment_load()
+ * loads data only from the comments table. This function allows modules
+ * to load properties onto comments through a 'load' op in hook_comment()
+ * and hence to produce custom comment properties that support toggling.
+ */
+function fasttoggle_load_comment(&$comment) {
+  if ($extra = comment_invoke_comment($comment, 'load')) {
+    foreach ($extra as $key => $value) {
+      $comment->$key = $value;
+    }
+  }
+}
+
+/**
+ * Return an array of toggleable options of the object and the name of each state.
+ *
+ * @param $type
+ *   The object type the functions should return options for (e.g. node, comment, ...).
+ * @param ...
+ *   Parameters for the fasttoggle_options hook.
+ */
+function fasttoggle_get_options($type) {
+  $args = func_get_args();
+  array_unshift($args, 'fasttoggle_options');
+
+  return call_user_func_array('module_invoke_all', $args);
+}
+
+
+/**
+ * Implementation of hook_fasttoggle_options().
+ */
+function fasttoggle_fasttoggle_options($type, $obj = NULL) {
+  $return = array();
+
+  switch ($type) {
+    case 'node': // $obj = node
+      $admin = user_access('administer nodes');
+
+      // Get an array with all enabled fast toggle links
+      $settings = variable_get('fasttoggle_node_settings', array('status' => TRUE, 'sticky' => TRUE, 'promote' => TRUE, 'comment' => FALSE));
+
+      if ($settings['status'] && ($admin || user_access('moderate posts'))) {
+        $return['status'] = _fasttoggle_get_label('node_status');
+      }
+      if ($settings['sticky'] && ($admin || user_access('make posts sticky'))) {
+        $return['sticky'] = _fasttoggle_get_label('node_sticky');
+      }
+      if ($settings['promote'] && ($admin || user_access('promote posts'))) {
+        $return['promote'] = _fasttoggle_get_label('node_promote');
+      }
+      if (module_exists('comment') && $settings['comment'] && ($admin || user_access('administer comments'))) {
+        $return['comment'] = _fasttoggle_get_label('comment_admin');
+      }
+      break;
+    case 'user': // $obj = user
+      // Get an array with all enabled fast toggle links
+      $settings = variable_get('fasttoggle_user_settings', array('status' => TRUE));
+
+      if ($settings['status'] && (user_access('administer users') || user_access('moderate users'))) {
+        $return['status'] = _fasttoggle_get_label('user_status');
+      }
+      break;
+    case 'comment': // $obj = comment
+      // Get an array with all enabled fast toggle links
+      $settings = variable_get('fasttoggle_comment_settings', array('status' => TRUE));
+
+      if ($settings['status'] && (user_access('administer comments') || user_access('moderate comments'))) {
+        $return['status'] = _fasttoggle_get_label('comment_status');
+      }
+      break;
+  }
+
+  return $return;
+}
+
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function fasttoggle_form_alter(&$form, $form_state, $form_id) {
+  switch ($form_id) {
+    case 'node_admin_nodes':
+      // Add published/unpublished toggle links to the node overview page.
+      if (isset($form['status'])) {
+        foreach ($form['status'] as $key => $status) {
+          $form['status'][$key]['#value'] = fasttoggle($status['#value'], 'node/'. $key .'/toggle/status', true, 'status_'. $key);
+        }
+      }
+      break;
+    case 'user_admin_account':
+      // Add blocked/unblocked toggle links to the user overview page.
+      if (isset($form['status'])) {
+        foreach ($form['status'] as $key => $status) {
+          $form['status'][$key]['#value'] = fasttoggle($status['#value'], 'admin/user/'. $key .'/toggle/status', true, 'status_'. $key);
+        }
+      }
+      break;
+  }
+}
+
+
+/**
+ * Implementation of hook_link().
+ */
+function fasttoggle_link($type, $obj = null, $teaser = false) {
+  $links = array();
+  $options = fasttoggle_get_options($type, $obj);
+
+  if (!empty($options)) {
+    switch ($type) {
+      case 'node':
+        foreach (array_keys($options) as $key) {
+          $links['fasttoggle_'. $key] = fasttoggle($options[$key][intval($obj->$key)], 'node/'. $obj->nid .'/toggle/'. $key, false, $key .'_'. $obj->nid);
+        }
+        break;
+      case 'comment':
+        fasttoggle_load_comment($obj);
+        foreach (array_keys($options) as $key) {
+          $links['fasttoggle_'. $key] = fasttoggle($options[$key][intval($obj->$key)], 'comment/toggle/'. $obj->cid .'/'. $key, false, $key .'_'. $obj->cid);
+        }
+        break;
+      // User is not one of the standard types for hook_link(). This
+      // use enables adding of user links to a user profile.
+      case 'user':
+        foreach (array_keys($options) as $key) {
+          $links['fasttoggle_'. $key] = fasttoggle($options[$key][intval($obj->$key)], 'user/'. $obj->uid .'/toggle/'. $key, false, $key .'_'. $obj->uid);
+        }
+        break;
+    }
+  }
+
+  return $links;
+}
+
+
+/**
+ * Implementation of hook_views_tables().
+ */
+function fasttoggle_views_tables() {
+  $tables['fasttoggle'] = array(
+    'fields' => array(
+      'fasttoggle' => array(
+        'name' => t('Node: Fasttoggle'),
+        'handler' => 'fasttoggle_handler_field',
+        'query_handler' => 'fasttoggle_node_query_handler',
+        'sortable' => false,
+        'option' => array(
+          '#type' => 'select',
+          '#options' => array(
+            'status' => t('Status'),
+            'promote' => t('Promoted'),
+            'sticky' => t('Sticky'),
+            'comment' => t('Comment settings'),
+          ),
+        ),
+        'notafield' => 'true',
+        'help' => t('This field contains a fasttoggle link for the selected action for the current node.'),
+      ),
+    ),
+  );
+
+  return $tables;
+}
+
+/**
+ * Views query callback.
+ */
+function fasttoggle_node_query_handler($fielddata, $fieldinfo, &$query) {
+  foreach (array('status', 'comment', 'promote', 'sticky') as $field) {
+    if (!in_array('node.'. $field, $query->fields)) {
+      $query->fields[] = 'node.'. $field;
+    }
+  }
+}
+
+
+/**
+ * Implementation of hook_fasttoggle_labels().
+ */
+function fasttoggle_fasttoggle_labels($style) {
+  switch ($style) {
+    case FASTTOGGLE_LABEL_ACTION:
+      $labels = array(
+        'node_status' => array(0 => t('publish'), 1 => t('unpublish')),
+        'node_sticky' => array(0 => t('make sticky'), 1 => t('make unsticky')),
+        'node_promote' => array(0 => t('promote'), 1 => t('demote')),
+        'comment_admin' => array(0 => t('lock comments'), 1 => t('unlock comments'), 2 => t('hide comments')),
+        'user_status' => array(0 => t('activate'), 1 => t('unblock')),
+        'comment_status' => array(0 => t('unpublish'), 1 => t('publish')),
+      );
+      break;
+    default:
+      $labels = array(
+        'node_status' => array(0 => t('not published'), 1 => t('published')),
+        'node_sticky' => array(0 => t('not sticky'), 1 => t('sticky')),
+        'node_promote' => array(0 => t('not promoted'), 1 => t('promoted')),
+        'comment_admin' => array(0 => t('comments disabled'), 1 => t('comments read only'), 2 => t('comments read/write')),
+        'user_status' => array(0 => t('blocked'), 1 => t('active')),
+        'comment_status' => array(0 => t('published'), 1 => t('not published')),
+      );
+      break;
+  }
+
+  return $labels;
+}
+
+
+/**
+ * Returns an array with labels for a given setting.
+ */
+function _fasttoggle_get_label($label) {
+  static $labels;
+
+  if ($labels == NULL) {
+    $style = variable_get('fasttoggle_label_style', FASTTOGGLE_LABEL_STATUS);
+    $labels = module_invoke_all('fasttoggle_labels', $style);
+
+    // Allow custom labels in settings.php.
+    if ($style == FASTTOGGLE_LABEL_CUSTOM) {
+      $labels = array_merge($labels, variable_get('fasttoggle_labels', array()));
+    }
+  }
+
+  return $labels[$label];
+}
+
+
+/**
+ * Views handler callback.
+ */
+function fasttoggle_handler_field($fieldinfo, $fielddata, $value, $data) {
+  $options = fasttoggle_get_options('node', $data);
+  $key = $fielddata['options'];
+
+  if (isset($options[$key]) && isset($data->$key)) {
+    return fasttoggle($options[$key][intval($data->$key)], 'node/'. $data->nid .'/toggle/'. $key, true, $key .'_'. $data->nid);
+  }
+}

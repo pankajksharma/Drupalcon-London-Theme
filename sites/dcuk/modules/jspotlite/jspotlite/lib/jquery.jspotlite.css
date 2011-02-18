@@ -1,0 +1,54 @@
+/** $Id: jquery.jspotlite.css,v 1.2 2009/11/11 21:23:40 neclimdul Exp $ */
+
+/**
+ * This <div> element is wrapped by jSpotlite around the list
+ * and has the classname "jspotlite-container".
+ */
+.jspotlite-container {
+  position: relative;
+}
+
+.jspotlite-list {
+  z-index: 1;
+  position: relative;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.jspotlite-list li,
+.jspotlite-item {
+  list-style: none;
+}
+
+.jspotlite-list .feature {
+  display: none;
+}
+
+/**
+ * This <div> element is populate with the featured content
+ */
+.jspotlite-spotlite {
+  z-index: 1;
+}
+
+/**
+ * The buttons are added dynamically by jSpotlite before
+ * the <ul> list (inside the <div> described above) and
+ * have the classnames "jspotlite-next" and "jspotlite-prev".
+ */
+.jspotlite-next {
+  z-index: 3;
+}
+
+.jspotlite-prev {
+  z-index: 3;
+}
+
+.jspotlite-prev,
+.jspotlite-pause,
+.jspotlite-next {
+  z-index: 3;
+  display: none;
+}

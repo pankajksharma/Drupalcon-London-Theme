@@ -1,0 +1,299 @@
+<?php
+
+include_once('cod_session.features.inc');
+
+/**
+ * Implementation of hook_theme().
+ */
+function cod_session_theme() {
+  return array(
+    'cod_session_calendar' => array(
+      'arguments' => array('view' => NULL, 'options' => NULL, 'rows' => NULL, 'title' => NULL),
+      'template' => 'cod-session-calendar',
+      ),
+    );
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function cod_session_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  if ($op == 'validate') {
+    // If the node has a room and slot field, make sure there are no existing nodes that have the same room/slot combination.
+    if (!empty($node->field_session_slot[0]['nid']) && !empty($node->field_session_room[0]['nid'])) {
+      $slots = array();
+      $rooms = array();
+      foreach ($node->field_session_slot as $slot) {
+        if (!empty($slot['nid'])) {
+          $slots[] = $slot['nid'];
+        }
+      }
+      foreach ($node->field_session_room as $room) {
+        if (!empty($room['nid'])) {
+          $rooms[] = $room['nid'];
+        }
+      }
+
+      if (!empty($slots) && !empty($rooms)) {
+        $result = db_rewrite_sql(db_query("SELECT DISTINCT
+        node.nid AS nid,
+        node.title AS title,
+        content_field_session_room.field_session_room_nid AS room_nid,
+        node2.title AS room_title
+        FROM {node} node
+        INNER JOIN {content_field_session_room} content_field_session_room
+        ON content_field_session_room.nid = node.nid AND content_field_session_room.vid = node.vid 
+        AND content_field_session_room.field_session_room_nid IN (" . db_placeholders($rooms, 'int') . ")
+        INNER JOIN {node} node2
+        ON content_field_session_room.field_session_room_nid = node2.nid 
+        INNER JOIN {content_field_session_slot} content_field_session_slot
+        ON content_field_session_slot.nid = node.nid AND content_field_session_slot.vid = node.vid 
+        AND content_field_session_slot.field_session_slot_nid IN (" . db_placeholders($slots, 'int') . ")
+        WHERE node.nid != %d
+        ", array_merge($rooms, $slots, array($node->nid))));
+
+        $errors = array();
+        while ($node = db_fetch_object($result)) {
+          $errors[] = t('!session in !room', array('!session' => l($node->title, 'node/' . $node->nid), '!room' => l($node->room_title, 'node/' . $node->room_nid)));
+        }
+
+        if (!empty($errors)) {
+          form_set_error('', format_plural(count($errors), 'The proposed slot and room conflicts with the following item:','The proposed slot and rooms conflict with the following items:') . theme('item_list', $errors) . format_plural(count($errors), 'Please select a different slot and/or room.', 'Please select a different slot and/or rooms.'));
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Theme function to render the calendar grid.
+ */
+function template_preprocess_cod_session_calendar(&$vars) {
+  // $vars['view']->result contains the raw data
+  // $vars['rows'] contains the row-formatted fields
+
+  // @todo Create style option whether to display both populated and non-populated slots
+  $show_all_slots = TRUE;
+
+  // Save raw row results keyed on nid.
+  $results = array();
+  $sessions = array();
+  if (!empty($vars['view']->result)) {
+    foreach ($vars['view']->result as $key => $node) {
+      $sessions[$node->nid] = node_load($node->nid);
+      $results[$node->nid] = $vars['rows'][$key];
+    }
+  }
+
+  // Currently, the Track is given by a text optionwidget.
+  // Consider revising this to be taxonomy or node reference to simplify the following.
+  $types = array('session', 'schedule_item');
+  $session_attrs = array();
+  foreach ($types as $type) {
+    $type_array = content_types($type);
+    foreach ($type_array['fields'] as $field) {
+      if ($field['type'] == 'text' && in_array($field['widget']['type'], array('optionwidgets_buttons', 'optionwidgets_select', 'optionwidgets_onoff'))) {
+        if (!isset($session_attrs[$field['field_name']])) {
+          // Allowed values of a field may or may not have machine-readable keys.
+          $allowed_values = content_allowed_values($field);
+          $session_attrs[$field['field_name']] = array(
+            'name' => $field['field_name'],
+            'values' => array_values($allowed_values),
+            'keys' => array_keys($allowed_values),
+            'machine_keys' => _cod_session_machine_keys($field['field_name'], array_keys($allowed_values)),
+            );
+        }
+      }
+    }
+  }
+
+  // Create text CCK optionwidgets as attributes of sessions for CSS usage.
+  if (!empty($session_attrs)) {
+    foreach ($sessions as $session_nid => $session) {
+      foreach ($session_attrs as $field) {
+        // See if field exists for particular session node.
+        if (is_array($session->$field['name'])) {
+          // Field could have multiple instances.
+          foreach ($session->$field['name'] as $instance) {
+            // Emtpy values are NULL.
+            if (isset($instance['value'])) {
+              // Create container if doesn't exist.
+              if (!isset($sessions[$session_nid]->cod_session_classes)) {
+                $sessions[$session_nid]->cod_session_classes = array();
+              }
+              $key = array_search($instance['value'], $field['values']);
+              if ($key === FALSE) {
+                // It's possible we've rewritten the keys.
+                $key = array_search($instance['value'], $field['keys']);
+                if ($key !== FALSE) {
+                  $value = $field['values'][$key];
+                }
+              }
+              else {
+                $value = $instance['value'];
+              }
+              if ($key !== FALSE) {
+                // Create class based on field key.
+                $sessions[$session_nid]->cod_session_classes[$field['machine_keys'][$key]] = $value;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Get a list of rooms.
+  $result = db_query("SELECT node.nid, node.title FROM {node} node WHERE node.type = 'room' AND node.status = 1 ORDER BY node.title ASC");
+  while ($node = db_fetch_object($result)) {
+    $rooms[$node->nid] = check_plain($node->title);
+  }
+
+  // Create structed grid of sessions.
+  $slot_nids = array();
+  $session_grid = array();
+  foreach ($sessions as $session) {
+    if (!empty($session->field_session_slot[0]['nid']) && !empty($session->field_session_room[0]['nid'])) {
+      if (!empty($session->cod_session_classes)) {
+        $class = ' ' . implode(' ', array_keys($session->cod_session_classes));
+      }
+      else {
+        $class = '';
+      }
+      foreach ($session->field_session_room as $room_instance) {
+        $session_grid[$session->field_session_slot[0]['nid']][$room_instance['nid']]['session'] = $session;
+        $session_grid[$session->field_session_slot[0]['nid']][$room_instance['nid']]['class'] = $class;
+      }
+      // Create array of populated slots.
+      if (!$show_all_slots && !in_array($session->field_session_slot[0]['nid'], $slot_nids)) {
+        $slot_nids[] = $session->field_session_slot[0]['nid'];
+      }
+    }
+  }
+
+  // Get all slots.
+  if ($show_all_slots) {
+    $result = db_query("SELECT node.nid FROM {node} node WHERE node.type = 'time_slot' AND node.status = 1");
+    while ($node = db_fetch_object($result)) {
+      $slot_nids[] = $node->nid;
+    }
+  }
+
+  // Load each slot. 
+  // @todo This could be malperformant. Consider revising such that all slots 
+  // are loaded with single query.
+  foreach ($slot_nids as $slot_nid) {
+    $slot = node_load($slot_nid);
+    $slots[$slot->nid] = $slot;
+  }
+
+  // Arrange slots by days.
+  // @todo Give plugin options for date formats and text?
+  $arranged_slots = array();
+  $days = array();
+  $day_count = 1;
+  foreach ($slots as $slot) {
+    $date_start = date_make_date($slot->field_slot_datetime[0]['value'], $slot->field_slot_datetime[0]['timezone_db']);
+    $date_end = date_make_date($slot->field_slot_datetime[0]['value2'], $slot->field_slot_datetime[0]['timezone_db']);
+    date_timezone_set($date_start, timezone_open($slot->field_slot_datetime[0]['timezone']));
+    date_timezone_set($date_end, timezone_open($slot->field_slot_datetime[0]['timezone']));
+    $day_key = date_format_date($date_start, 'custom', 'Y-m-d');
+    $arranged_slots[$day_key][date_format_date($date_start, 'custom', DATE_FORMAT_UNIX)] = array(
+      'nid' => $slot->nid,
+      'start' => date_format_date($date_start, 'custom', 'g:iA'),
+      'end' => date_format_date($date_end, 'custom', 'g:iA'),
+      );
+    if (!isset($days[$day_key])) {
+      $days[$day_key] = t('Day !count - !date', array('!count' => $day_count++, '!date' => date_format_date($date_start, 'custom', 'F jS, Y')));
+    }
+  }
+
+  // Sort the arranged slots.
+  cod_session_ksort_recurse($arranged_slots);
+
+  // Calculate colspans.
+  // For each day...
+  foreach ($days as $day_key => $day_title) {
+    // For each slot...
+    foreach ($arranged_slots[$day_key] as $slot) {
+      if (!empty($session_grid[$slot['nid']])) {
+        $row = &$session_grid[$slot['nid']];
+        $room_nids = array_keys($rooms);
+        // For each room in slot...
+        foreach ($room_nids as $room_key => $room_nid) {
+          // Check if session exists.
+          if (!empty($row[$room_nid]['session'])) {
+            $session = $row[$room_nid]['session'];
+            $colspan = 1;
+            // For remaining rooms in row, check for other sessions.
+            for ($i=$room_key + 1; $i < count($room_nids); $i++) {
+              if (!empty($row[$room_nids[$i]]['session'])) {
+                $adjacent = $row[$room_nids[$i]]['session'];
+                // Check to see if adjacent column matches.
+                if ($session->nid == $adjacent->nid) {
+                  // We'll accommodate for this in the markup.
+                  $colspan++;
+                  $row[$room_nids[$i]]['spanned'] = TRUE;
+                  unset($row[$room_nids[$i]]['session']);
+                }
+                else {
+                  // Adjacent session does not match.
+                  break;
+                }
+              }
+              else {
+                // Only consider those which are adjacent.
+                break;
+              }
+            }
+            // Add colspan attribute to session grid.
+            if ($colspan > 1) {
+              $row[$room_nid]['colspan'] = $colspan;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  $vars['results'] = $results;
+  $vars['session_grid'] = $session_grid;
+  $vars['arranged_slots'] = $arranged_slots;
+  $vars['days'] = $days;
+  $vars['rooms'] = $rooms;
+}
+
+/**
+ * Recursive ksort.
+ */
+function cod_session_ksort_recurse(&$array) {
+  ksort($array);
+  foreach (array_keys($array) as $key) {
+    if (is_array($array[$key])) {
+      cod_session_ksort_recurse($array[$key]);
+      ksort($array[$key]);
+    }
+    else {
+      return;
+    }
+  }
+}
+
+/**
+ * Create array of machine-readable keys.
+ */
+function _cod_session_machine_keys($prefix, $keys) {
+  $machine_keys = array();
+  foreach ($keys as $index => $key) {
+    $machine_key_raw = trim(preg_replace('/_+/', '_', preg_replace('/[^a-z0-9]+/', '_', strtolower($key))), '_');
+    if ($machine_key_raw == '') {
+      $machine_key_raw = $index;
+    }
+    $machine_key = $prefix . '-' . $machine_key_raw;
+    if (in_array($machine_key, $machine_keys)) {
+      $machine_key .= '-' . $index;
+    }
+    $machine_keys[$index] = $machine_key;
+  }
+  return $machine_keys;
+}

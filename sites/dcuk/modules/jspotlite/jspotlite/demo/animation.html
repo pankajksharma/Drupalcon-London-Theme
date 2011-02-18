@@ -1,0 +1,119 @@
+<html>
+<head>
+  <title>jSpotlite Demo</title>
+  <script type="text/javascript" charset="utf-8" src='../lib/jquery.min.js'></script>
+  <script type="text/javascript" charset="utf-8" src='../lib/jquery.jspotlite.js'></script>
+  <script type="text/javascript" charset="utf-8" src='../lib/jquery-ui-1.6.custom.min.js'></script>
+  <link type="text/css" rel="stylesheet" media="all" href="../lib/jquery.jspotlite.css" />
+  <link type="text/css" rel="stylesheet" media="all" href="../style/tango/skin.css" />
+  <script type="text/javascript" charset="utf-8">
+    $(function() {
+      // Function based on the shuffle animation from the jQuery Cycle Shuffle transition.
+      $.jspotlite.animation.customShuffle = function(o, e1, e2) {
+        // $cont, $slides, opts) {
+	var w = e1.css({overflow: "visible", position: "absolute"}).width();
+	e1.css({ display: 'block', opacity: 1, top: 0, left: 0, width: w, "z-index": 1 });
+	e2.css({ "z-index": 0 });
+        opts = $.extend(o.options, { left: w, top: 15 });
+
+        e1.animate(opts, "slow", "swing", function() {
+          e1.css({"z-index": -1});
+          e1.animate({ left:0, top:0}, "slow", "swing", function() {
+            $(this).remove();
+          });
+        });
+      };
+
+      // Provide a couple options.
+      $('#spotlite-animation').jspotlite({
+        spotlite: {
+          animation: "animate",
+          options: {
+            duration: "slow",
+            easing: "swing",
+            hide: {
+              opacity: 0
+            },
+            show: {
+              opacity: 1
+            }
+          }
+        }
+      });
+      // Provide a couple options.
+      $('#spotlite-ui').jspotlite({
+        spotlite: {
+          animation: "uiEffect",
+          options: {
+            speed: "slow"
+          }
+        }
+      });
+      $('#spotlite-custom').jspotlite({
+        spotlite: {
+          animation: "customShuffle"
+        }
+      });
+    });
+  </script>
+  <style type="text/css" media="all">
+    .jspotlite-skin-tango {
+      margin: 15px;
+    }
+    .jspotlite-skin-tango .jspotlite-container {
+      width: 400px;
+    }
+    .jspotlite-container .jspotlite-spotlite-content {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    #spotlite-custom-container .jspotlite-spotlite-content {
+      margin-right: 10px;
+      background: #F0F6F9;
+      height: 115px;
+    }
+  </style>
+</head>
+<body>
+<h1>jSpotlite Animation Demo</h1>
+
+<p>Demonstrations of how to use the provided animation plugins to provide more interesting spotlite transitions.</p>
+
+<h2>jQuery Animation</h2>
+<p>A basic fade for the spotlite content using the jQuery animation function.</p>
+<div class="jspotlite-skin-tango">
+  <ul id="spotlite-animation" class="jspotlite-list">
+    <li>Dennis Wilson<div class="feature">this</div></li>
+    <li>Billy Joel<div class="feature">is</div></li>
+    <li>Joe Strummer<div class="feature">updating</div></li>
+    <li>Michael Jackson<div class="feature">like</div></li>
+    <li>Carole King<div class="feature">magic</div></li>
+  </ul>
+</div>
+
+<h2>jQuery UI Effects</h2>
+<p>A little more interesting animation example demonstrating using jQuery UI effects.</p>
+<div class="jspotlite-skin-tango">
+  <ul id="spotlite-ui" class="jspotlite-list">
+    <li>Dennis Wilson<div class="feature">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ac arcu lacus. Sed consequat, lacus.</div></li>
+    <li>Billy Joel<div class="feature">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent neque sem, consequat vel eleifend eu.</div></li>
+    <li>Joe Strummer<div class="feature">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec placerat urna nec velit varius nec.</div></li>
+    <li>Michael Jackson<div class="feature">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc condimentum aliquam eros, quis pharetra augue.</div></li>
+    <li>Carole King<div class="feature">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris dui diam, viverra sodales laoreet id.</div></li>
+  </ul>
+</div>
+
+<h2>Custom animation callback</h2>
+<p>Example of using a custom animation function.</p>
+<div class="jspotlite-skin-tango">
+  <ul id="spotlite-custom" class="jspotlite-list">
+    <li>Dennis Wilson<div class="feature">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ac arcu lacus. Sed consequat, lacus.</div></li>
+    <li>Billy Joel<div class="feature">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent neque sem, consequat vel eleifend eu.</div></li>
+    <li>Joe Strummer<div class="feature">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec placerat urna nec velit varius nec.</div></li>
+    <li>Michael Jackson<div class="feature">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc condimentum aliquam eros, quis pharetra augue.</div></li>
+    <li>Carole King<div class="feature">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris dui diam, viverra sodales laoreet id.</div></li>
+  </ul>
+</div>
+</body>
+</html>

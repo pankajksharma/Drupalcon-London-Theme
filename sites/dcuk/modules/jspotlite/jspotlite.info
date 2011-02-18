@@ -1,0 +1,12 @@
+; $Id: jspotlite.info,v 1.1 2009/05/12 19:45:28 neclimdul Exp $
+name = jSpotlite
+description = Provides integration with the jQuery jSpolite plugin. Support for Views included.
+package = jQuery
+core = 6.x
+
+; Information added by drupal.org packaging script on 2010-07-11
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "jspotlite"
+datestamp = "1278834685"
+

@@ -1,0 +1,180 @@
+.jspotlite-skin-tango .jspotlite-container {
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
+  background: #F0F6F9;
+  border: 1px solid #346F97;
+  padding: 5px;
+}
+
+.jcarousel-skin-tango .jcarousel-container-horizontal {
+  width: 450px;
+}
+
+.jcarousel-skin-tango .jcarousel-container-vertical {
+  width: 450px;
+}
+
+.jspotlite-skin-tango .jspotlite-list {
+	width: 34%;
+}
+
+.jspotlite-skin-tango .jspotlite-spotlite {
+	width: 65%;
+	position: absolute;
+	left: 35%;
+  top: 0;
+}
+
+.jspotlite-skin-tango .jspotlite-spotlite-content {
+/*  background: red;*/
+  padding: 5px;
+}
+
+/**
+ *  Horizontal Buttons
+ */
+.jspotlite-skin-tango .jspotlite-next-horizontal {
+  position: absolute;
+  top: 43px;
+  right: 5px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  background: transparent url(next-horizontal.png) no-repeat 0 0;
+}
+
+.jspotlite-skin-tango .jspotlite-next-horizontal:hover {
+  background-position: -32px 0;
+}
+
+.jspotlite-skin-tango .jspotlite-next-horizontal:active {
+  background-position: -64px 0;
+}
+
+.jspotlite-skin-tango .jspotlite-next-disabled-horizontal,
+.jspotlite-skin-tango .jspotlite-next-disabled-horizontal:hover,
+.jspotlite-skin-tango .jspotlite-next-disabled-horizontal:active {
+  cursor: default;
+  background-position: -96px 0;
+}
+
+.jspotlite-skin-tango .jspotlite-prev-horizontal {
+  position: absolute;
+  top: 43px;
+  left: 5px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  background: transparent url(prev-horizontal.png) no-repeat 0 0;
+}
+
+.jspotlite-skin-tango .jspotlite-prev-horizontal:hover {
+  background-position: -32px 0;
+}
+
+.jspotlite-skin-tango .jspotlite-prev-horizontal:active {
+  background-position: -64px 0;
+}
+
+.jspotlite-skin-tango .jspotlite-prev-disabled-horizontal,
+.jspotlite-skin-tango .jspotlite-prev-disabled-horizontal:hover,
+.jspotlite-skin-tango .jspotlite-prev-disabled-horizontal:active {
+  cursor: default;
+  background-position: -96px 0;
+}
+
+/**
+ *  Vertical Buttons
+ */
+.jspotlite-skin-tango .jspotlite-control-vertical {
+	position: relative;
+  width: 24%;
+  height: 40px;
+}
+.jspotlite-skin-tango .jspotlite-next-vertical {
+  position: absolute;
+  top: 5px;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  background: transparent url(next-vertical.png) no-repeat 0 0;
+}
+
+.jspotlite-skin-tango .jspotlite-next-vertical:hover {
+  background-position: 0 -32px;
+}
+
+.jspotlite-skin-tango .jspotlite-next-vertical:active {
+  background-position: 0 -64px;
+}
+
+.jspotlite-skin-tango .jspotlite-next-disabled-vertical,
+.jspotlite-skin-tango .jspotlite-next-disabled-vertical:hover,
+.jspotlite-skin-tango .jspotlite-next-disabled-vertical:active {
+  cursor: default;
+  background-position: 0 -96px;
+}
+
+.jspotlite-skin-tango .jspotlite-pause-vertical {
+  position: absolute;
+  top: 5px;
+  right: 32px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  background: transparent url(pause.png) no-repeat 0 0;
+}
+
+.jspotlite-skin-tango .jspotlite-pause-vertical:hover {
+  background-position: 0 -32px;
+}
+
+.jspotlite-skin-tango .jspotlite-pause-vertical:active {
+  background-position: 0 -64px;
+}
+
+.jspotlite-skin-tango .jspotlite-pause-disabled-vertical,
+.jspotlite-skin-tango .jspotlite-pause-disabled-vertical:hover,
+.jspotlite-skin-tango .jspotlite-pause-disabled-vertical:active {
+  cursor: default;
+  background-position: 0 -96px;
+}
+
+.jspotlite-skin-tango .jspotlite-prev-vertical {
+  position: absolute;
+  top: 5px;
+  right: 64px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  background: transparent url(prev-vertical.png) no-repeat 0 0;
+}
+
+.jspotlite-skin-tango .jspotlite-prev-vertical:hover {
+  background-position: 0 -32px;
+}
+
+.jspotlite-skin-tango .jspotlite-prev-vertical:active {
+  background-position: 0 -64px;
+}
+
+.jspotlite-skin-tango .jspotlite-prev-disabled-vertical,
+.jspotlite-skin-tango .jspotlite-prev-disabled-vertical:hover,
+.jspotlite-skin-tango .jspotlite-prev-disabled-vertical:active {
+  cursor: default;
+  background-position: 0 -96px;
+}
+
+.jspotlite-list li,
+.jspotlite-item {
+  padding: 3px 10px;
+}
+
+.jspotlite-active {
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  border-radius: 5px;
+  background: #346F97;
+}

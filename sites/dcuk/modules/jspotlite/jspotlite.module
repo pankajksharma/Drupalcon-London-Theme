@@ -1,0 +1,51 @@
+<?php
+// $Id: jspotlite.module,v 1.4 2009/11/11 21:23:57 neclimdul Exp $
+/**
+ * @file
+ */
+
+/**
+ * Implementation of hook_views_api().
+ */
+function jspotlite_views_api() {
+  return array('api' => 2);
+}
+
+function jspotlite_add($name, $options) {
+  $selector = $name;
+  $module_path = drupal_get_path('module', 'jspotlite');
+
+  $skin = $options['skin'];
+  if ($skin == 'tango') {
+    drupal_add_css("$module_path/jspotlite/style/$skin/skin.css");
+  } 
+  elseif (!empty($options['skin_path'])) {
+    drupal_add_css($options['skin_path'], 'theme');
+  }
+
+  // Include our basic layout css.
+  drupal_add_css($module_path . '/jspotlite/lib/jquery.jspotlite.css');
+  // Include library.
+  drupal_add_js($module_path . '/jspotlite/lib/jquery.jspotlite.js');
+  // Include our attachment script.
+  drupal_add_js($module_path . '/jspotlite.js');
+  // Push settings for attachment script to grab.
+  $defaults = array(
+    'horizontal' => FALSE,
+    'start' => 0,
+    'delay' => 3,
+    'pause' => TRUE,
+    'restart' => TRUE,
+    'itemEvent' => 'click',
+  );
+  foreach ($defaults as $default => $value) {
+    if (isset($options['options'][$default]) && $options['options'][$default] == $value) {
+      unset($options['options'][$default]);
+    }
+  }
+  drupal_add_js(array(
+    'jspotlite' => array(
+      $selector => $options,
+    ),
+  ), 'setting');
+}

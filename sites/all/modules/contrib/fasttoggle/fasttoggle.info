@@ -1,0 +1,10 @@
+; $Id: fasttoggle.info,v 1.3 2007/10/07 12:27:53 timcn Exp $
+name = Fasttoggle
+description = Enables fast toggling of binary settings.
+core = "6.x"
+; Information added by drupal.org packaging script on 2008-04-19
+version = "6.x-1.3"
+core = "6.x"
+project = "fasttoggle"
+datestamp = "1208634010"
+
